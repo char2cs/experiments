@@ -1,0 +1,61 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      daemon_e2e:
+        description: Also drive a real quiver.core daemon (needs access to rabbytesoftware/quiver.core)
+        type: boolean
+        default: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: Format
+        run: test -z "$(gofmt -l .)"
+      - name: Vet
+        run: go vet -tags e2e ./...
+      - name: Unit tests
+        run: go test -race -cover ./...
+      - name: Process e2e (manifest commands against the real server)
+        run: go test -race -tags e2e -run TestProcess ./e2e/
+
+  real-minecraft:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Real Minecraft server (manifest commands, Mojang jar, Java)
+        run: E2E_REAL=1 go test -tags e2e -run TestMinecraft -v ./e2e/
+
+  daemon-e2e:
+    if: github.event_name == 'workflow_dispatch' && inputs.daemon_e2e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: rabbytesoftware/quiver.core
+          path: quiver.core
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: Build quiver
+        working-directory: quiver.core
+        run: CGO_ENABLED=0 go build -o "$RUNNER_TEMP/quiver" ./cmd/quiver
+      - name: Daemon e2e
+        run: E2E_REAL=1 QUIVER_BIN="$RUNNER_TEMP/quiver" go test -tags e2e -run TestQuiver -v ./e2e/
