@@ -38,8 +38,7 @@ metadata:
 variables:
   - name: ACCEPT_EULA
     type: boolean
-    default: "false"
-    description: Set to true to accept the Minecraft EULA (https://aka.ms/MinecraftEULA). The server will not start otherwise.
+    description: Set to true to accept the Minecraft EULA (https://aka.ms/MinecraftEULA). Asked for on every start; the server will not run otherwise.
   - name: MOTD
     type: string
     default: "A Quiver Minecraft server"
