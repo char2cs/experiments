@@ -89,7 +89,7 @@ targets:
       ram_gb: 2
       disk_gb: 2
     tools:
-      - github.com/char2cs/experiments/java@v0.*
+      - github.com/char2cs/experiments/java@main
     lifecycle:
       install:
         - type: fetch
